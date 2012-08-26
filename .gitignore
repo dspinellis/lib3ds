@@ -1,0 +1,8 @@
+Debug/
+examples/3ds2obj/Debug/
+examples/3dsdump/Debug/
+examples/cube/Debug/
+lib3ds.opensdf
+lib3ds.sdf
+src/Debug/
+
