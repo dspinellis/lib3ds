@@ -5,4 +5,8 @@ examples/cube/Debug/
 lib3ds.opensdf
 lib3ds.sdf
 src/Debug/
-
+Release/
+examples/3ds2obj/Release/
+examples/3dsdump/Release/
+examples/cube/Release/
+src/Release/
