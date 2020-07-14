@@ -1,6 +1,5 @@
 /* -*- c -*- */
-#ifndef INCLUDED_LIB3DS_H
-#define INCLUDED_LIB3DS_H
+#pragma once
 /*
     Copyright (C) 1996-2008 by Jan Eric Kyprianidis <www.kyprianidis.com>
     All rights reserved.
@@ -795,5 +794,3 @@ extern LIB3DSAPI void lib3ds_matrix_camera(float m[4][4], float pos[3], float tg
 #ifdef __cplusplus
 }
 #endif
-#endif
-
