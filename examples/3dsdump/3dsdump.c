@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #pragma warning ( disable : 4996 )
@@ -43,6 +44,7 @@ help() {
             "\n"
             "Options:\n"
             "  -h           This help\n"
+            "  -b           Dump bounding box coordinates of file \n"
             "  -d=level     Set log level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)\n"
             "  -m           Dump materials\n"
             "  -t           Dump trimeshes\n"
@@ -63,7 +65,8 @@ typedef enum Flags {
     LIB3DSDUMP_INSTANCES  = 0x0010,
     LIB3DSDUMP_CAMERAS    = 0x0020,
     LIB3DSDUMP_LIGHTS     = 0x0040,
-    LIB3DSDUMP_NODES      = 0x0080
+    LIB3DSDUMP_NODES      = 0x0080,
+    LIB3DSDUMP_BBOX       = 0x0100,
 } Flags;
 
 
@@ -81,6 +84,8 @@ parse_args(int argc, char **argv) {
         if (argv[i][0] == '-') {
             if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
                 help();
+            } else if (argv[i][1] == 'b') {
+                flags |= LIB3DSDUMP_BBOX;
             } else if ((argv[i][1] == 'd') && (argv[i][2] == '='))  {
                 log_level =  atoi(&argv[i][3]);
             } else if (argv[i][1] == 'm') {
@@ -450,6 +455,68 @@ node_dump(Lib3dsNode *node, int level) {
     }
 }
 
+// Set the bounding box of the nodes
+static void
+update_bounding_box(Lib3dsFile* f, Lib3dsNode* first_node, float bb_min[3], float bb_max[3])
+{
+    for (Lib3dsNode* p = first_node; p; p = p->next) {
+        if (p->type != LIB3DS_NODE_MESH_INSTANCE)
+            continue;
+        Lib3dsMeshInstanceNode* node = (Lib3dsMeshInstanceNode*)p;
+        Lib3dsMesh* mesh = lib3ds_file_mesh_for_node(f, (Lib3dsNode*)node);
+        if (!mesh || !mesh->vertices)
+            continue;
+        float inv_matrix[4][4], M[4][4], tmp[3];
+
+        float(*orig_vertices)[3] = (float(*)[3])malloc(sizeof(float) * 3 * mesh->nvertices);
+        memcpy(orig_vertices, mesh->vertices, sizeof(float) * 3 * mesh->nvertices);
+        lib3ds_matrix_copy(M, node->base.matrix);
+        lib3ds_matrix_translate(M, -node->pivot[0], -node->pivot[1], -node->pivot[2]);
+        lib3ds_matrix_copy(inv_matrix, mesh->matrix);
+        lib3ds_matrix_inv(inv_matrix);
+        lib3ds_matrix_mult(M, M, inv_matrix);
+
+        for (int i = 0; i < mesh->nvertices; ++i) {
+            lib3ds_vector_transform(tmp, M, mesh->vertices[i]);
+            lib3ds_vector_copy(mesh->vertices[i], tmp);
+        }
+
+        for (int i = 0; i < mesh->nfaces; ++i)
+            for (int j = 0; j < 3; ++j) {
+                int vertex = mesh->faces[i].index[j];
+                bb_min[0] = fmin(bb_min[0], mesh->vertices[vertex][0]);
+                bb_max[0] = fmax(bb_max[0], mesh->vertices[vertex][0]);
+                bb_min[1] = fmin(bb_min[1], mesh->vertices[vertex][1]);
+                bb_max[1] = fmax(bb_max[1], mesh->vertices[vertex][1]);
+                bb_min[2] = fmin(bb_min[2], mesh->vertices[vertex][2]);
+                bb_max[2] = fmax(bb_max[2], mesh->vertices[vertex][2]);
+            }
+
+        memcpy(mesh->vertices, orig_vertices, sizeof(float) * 3 * mesh->nvertices);
+        free(orig_vertices);
+        update_bounding_box(f, p->childs, bb_min, bb_max);
+    }
+}
+
+#include "float.h"
+
+// Dump the bounding box of the specified 3D Studio file
+void
+bounding_box_dump(Lib3dsFile* f)
+{
+    if (!f->nodes)
+        lib3ds_file_create_nodes_for_meshes(f);
+    float bb_min[3], bb_max[3];
+    bb_min[0] = bb_min[1] = bb_min[2] = FLT_MAX;
+    bb_max[0] = bb_max[1] = bb_max[2] = -FLT_MAX;
+    update_bounding_box(f, f->nodes, bb_min, bb_max);
+    printf("Min point: %.2f %.2f %.2f\n", bb_min[0], bb_min[1], bb_min[2]);
+    printf("Max point: %.2f %.2f %.2f\n", bb_max[0], bb_max[1], bb_max[2]);
+    printf("Center: %.2f %.2f %.2f\n",
+        (bb_min[0] + bb_max[0]) / 2,
+        (bb_min[1] + bb_max[1]) / 2,
+        (bb_min[2] + bb_max[2]) / 2);
+}
 
 int
 main(int argc, char **argv) {
@@ -520,6 +587,11 @@ main(int argc, char **argv) {
         for (p = f->nodes; p != 0; p = p->next) {
             node_dump(p, 1);
         }
+        printf("\n");
+    }
+    if (flags & LIB3DSDUMP_BBOX) {
+        printf("Dumping bounding box:\n");
+        bounding_box_dump(f);
         printf("\n");
     }
     if (output) {
