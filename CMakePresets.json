@@ -1,0 +1,46 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 4,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-vs2026-x64",
+      "displayName": "Windows x64 (Visual Studio 2026), static, no tools",
+      "description": "Visual Studio 2026 solution for x64 building only the static lib3ds library; build with the RelWithDebInfo build preset.",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "LIB3DS_BUILD_TOOLS": "OFF"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-vs2026-x64-relwithdebinfo",
+      "displayName": "Windows x64 (Visual Studio 2026) RelWithDebInfo",
+      "configurePreset": "windows-vs2026-x64",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-vs2026-x64-relwithdebinfo-install",
+      "displayName": "Windows x64 (Visual Studio 2026) RelWithDebInfo + install",
+      "configurePreset": "windows-vs2026-x64",
+      "configuration": "RelWithDebInfo",
+      "targets": [ "install" ]
+    }
+  ]
+}

@@ -13,3 +13,4 @@ examples/3ds2obj/Release/
 examples/3dsdump/Release/
 examples/cube/Release/
 src/Release/
+out/
