@@ -1,0 +1,78 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 4,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-vs2026-x64",
+      "displayName": "Windows x64 (Visual Studio 2026), static, no tools",
+      "description": "Visual Studio 2026 solution for x64 building only the static lib3ds library; build with the RelWithDebInfo build preset.",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "LIB3DS_BUILD_TOOLS": "OFF"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "macos-arm64",
+      "displayName": "macOS arm64 (Xcode), static, no tools",
+      "description": "Xcode project for arm64 (macOS 12.0 and later) building only the static lib3ds library; build with the RelWithDebInfo build preset.",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "LIB3DS_BUILD_TOOLS": "OFF",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-vs2026-x64-relwithdebinfo",
+      "displayName": "Windows x64 (Visual Studio 2026) RelWithDebInfo",
+      "configurePreset": "windows-vs2026-x64",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-vs2026-x64-relwithdebinfo-install",
+      "displayName": "Windows x64 (Visual Studio 2026) RelWithDebInfo + install",
+      "configurePreset": "windows-vs2026-x64",
+      "configuration": "RelWithDebInfo",
+      "targets": [ "install" ]
+    },
+    {
+      "name": "macos-arm64-relwithdebinfo",
+      "displayName": "macOS arm64 (Xcode) RelWithDebInfo",
+      "configurePreset": "macos-arm64",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "macos-arm64-relwithdebinfo-install",
+      "displayName": "macOS arm64 (Xcode) RelWithDebInfo + install",
+      "configurePreset": "macos-arm64",
+      "configuration": "RelWithDebInfo",
+      "targets": [ "install" ]
+    }
+  ]
+}
